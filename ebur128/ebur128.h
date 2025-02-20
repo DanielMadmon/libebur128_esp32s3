@@ -237,7 +237,7 @@ int ebur128_add_frames_double(ebur128_state* st,
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_I" has not been set.
  */
-int ebur128_loudness_global(ebur128_state* st, double* out);
+int ebur128_loudness_global(ebur128_state* st, float* out);
 /** \brief Get global integrated loudness in LUFS across multiple instances.
  *
  *  @param sts array of library states.
@@ -250,7 +250,7 @@ int ebur128_loudness_global(ebur128_state* st, double* out);
  */
 int ebur128_loudness_global_multiple(ebur128_state** sts,
                                      size_t size,
-                                     double* out);
+                                     float* out);
 
 /** \brief Get momentary loudness (last 400ms) in LUFS.
  *
@@ -260,7 +260,7 @@ int ebur128_loudness_global_multiple(ebur128_state** sts,
  *  @return
  *    - EBUR128_SUCCESS on success.
  */
-int ebur128_loudness_momentary(ebur128_state* st, double* out);
+int ebur128_loudness_momentary(ebur128_state* st, float* out);
 /** \brief Get short-term loudness (last 3s) in LUFS.
  *
  *  @param st library state.
@@ -270,7 +270,7 @@ int ebur128_loudness_momentary(ebur128_state* st, double* out);
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_S" has not been set.
  */
-int ebur128_loudness_shortterm(ebur128_state* st, double* out);
+int ebur128_loudness_shortterm(ebur128_state* st, float* out);
 
 /** \brief Get loudness of the specified window in LUFS.
  *
@@ -286,7 +286,7 @@ int ebur128_loudness_shortterm(ebur128_state* st, double* out);
  */
 int ebur128_loudness_window(ebur128_state* st,
                             unsigned long window,
-                            double* out);
+                            float* out);
 
 /** \brief Get loudness range (LRA) of programme in LU.
  *
@@ -301,7 +301,7 @@ int ebur128_loudness_window(ebur128_state* st,
  *    - EBUR128_ERROR_NOMEM in case of memory allocation error.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_LRA" has not been set.
  */
-int ebur128_loudness_range(ebur128_state* st, double* out);
+int ebur128_loudness_range(ebur128_state* st, float* out);
 /** \brief Get loudness range (LRA) in LU across multiple instances.
  *
  *  Calculates loudness range according to EBU 3342.
@@ -318,7 +318,7 @@ int ebur128_loudness_range(ebur128_state* st, double* out);
  */
 int ebur128_loudness_range_multiple(ebur128_state** sts,
                                     size_t size,
-                                    double* out);
+                                    float* out);
 
 /** \brief Get maximum sample peak from all frames that have been processed.
  *
@@ -335,7 +335,7 @@ int ebur128_loudness_range_multiple(ebur128_state** sts,
  */
 int ebur128_sample_peak(ebur128_state* st,
                         unsigned int channel_number,
-                        double* out);
+                        float* out);
 
 /** \brief Get maximum sample peak from the last call to add_frames().
  *
@@ -352,7 +352,7 @@ int ebur128_sample_peak(ebur128_state* st,
  */
 int ebur128_prev_sample_peak(ebur128_state* st,
                              unsigned int channel_number,
-                             double* out);
+                             float* out);
 
 /** \brief Get maximum true peak from all frames that have been processed.
  *
@@ -377,7 +377,7 @@ int ebur128_prev_sample_peak(ebur128_state* st,
  */
 int ebur128_true_peak(ebur128_state* st,
                       unsigned int channel_number,
-                      double* out);
+                      float* out);
 
 /** \brief Get maximum true peak from the last call to add_frames().
  *
@@ -402,7 +402,7 @@ int ebur128_true_peak(ebur128_state* st,
  */
 int ebur128_prev_true_peak(ebur128_state* st,
                            unsigned int channel_number,
-                           double* out);
+                           float* out);
 
 /** \brief Get relative threshold in LUFS.
  *
@@ -413,7 +413,7 @@ int ebur128_prev_true_peak(ebur128_state* st,
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_I" has not
  *      been set.
  */
-int ebur128_relative_threshold(ebur128_state* st, double* out);
+int ebur128_relative_threshold(ebur128_state* st, float* out);
 
 #ifdef __cplusplus
 }

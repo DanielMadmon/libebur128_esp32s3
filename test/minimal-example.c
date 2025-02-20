@@ -12,7 +12,7 @@ int main(int ac, const char* av[]) {
   sf_count_t nr_frames_read;
   ebur128_state** sts = NULL;
   double* buffer;
-  double loudness;
+  float loudness;
   int i;
 
   if (ac < 2) {

@@ -13,7 +13,7 @@ double test_global_loudness(const char* filename, ebur128_state** out_state) {
   sf_count_t nr_frames_read;
 
   ebur128_state* st = NULL;
-  double gated_loudness;
+  float gated_loudness;
   double* buffer;
 
   memset(&file_info, '\0', sizeof(file_info));
@@ -55,7 +55,7 @@ double test_loudness_range(const char* filename) {
   sf_count_t nr_frames_read;
 
   ebur128_state* st = NULL;
-  double loudness_range;
+  float loudness_range;
   double* buffer;
 
   memset(&file_info, '\0', sizeof(file_info));
@@ -99,7 +99,7 @@ double test_true_peak(const char* filename) {
   int i;
 
   ebur128_state* st = NULL;
-  double true_peak;
+  float true_peak;
   double max_true_peak = -HUGE_VAL;
   double* buffer;
 
@@ -146,7 +146,7 @@ double test_max_momentary(const char* filename) {
   sf_count_t nr_frames_read;
   sf_count_t total_frames_read = 0;
   ebur128_state* st = NULL;
-  double momentary;
+  float momentary;
   double max_momentary = -HUGE_VAL;
   double* buffer;
 
@@ -198,7 +198,7 @@ double test_max_shortterm(const char* filename) {
   sf_count_t nr_frames_read;
   sf_count_t total_frames_read = 0;
   ebur128_state* st = NULL;
-  double shortterm;
+  float shortterm;
   double max_shortterm = -HUGE_VAL;
   double* buffer;
 
@@ -255,7 +255,7 @@ double lrae[] = { 1.0001105488329134e+01, 4.9993734051522178e+00,
                   4.9747585878473721e+00, 1.4993650849123316e+01 };
 
 int main() {
-  double result;
+  float result;
   ebur128_state* states[9] = { 0 };
   int i;
 

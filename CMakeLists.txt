@@ -38,6 +38,8 @@ else()
   message(STATUS "Building static library")
 endif()
 
+set(ENABLE_TESTS ON)
+
 if(ENABLE_TESTS)
   message(STATUS "building tests!")
 else()
