@@ -1,4 +1,4 @@
-libebur128
+libebur128 wip to add single precision floats with esp32s3 support
 ==========
 
 libebur128 is a library that implements the EBU R 128 standard for loudness
