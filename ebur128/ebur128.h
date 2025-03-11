@@ -17,7 +17,7 @@ extern "C" {
 #define EBUR128_VERSION_PATCH 6
 
 #include <stddef.h> /* for size_t */
-
+#include <inttypes.h>
 /** \enum channel
  *  Use these values when setting the channel map with ebur128_set_channel().
  *  See definitions in ITU R-REC-BS 1770-4
@@ -124,7 +124,7 @@ void ebur128_get_version(int* major, int* minor, int* patch);
  *  @return an initialized library state, or NULL on error.
  */
 ebur128_state*
-ebur128_init(unsigned int channels, unsigned long samplerate, int mode);
+ebur128_init(uint32_t channels, uint64_t samplerate, uint32_t mode);
 
 /** \brief Destroy library state.
  *
@@ -149,9 +149,9 @@ void ebur128_destroy(ebur128_state** st);
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
  */
-int ebur128_set_channel(ebur128_state* st,
-                        unsigned int channel_number,
-                        int value);
+int32_t ebur128_set_channel(ebur128_state* st,
+                        uint32_t channel_number,
+                        int32_t value);
 
 /** \brief Change library parameters.
  *
@@ -167,9 +167,9 @@ int ebur128_set_channel(ebur128_state* st,
  *      invalid and must be destroyed.
  *    - EBUR128_ERROR_NO_CHANGE if channels and sample rate were not changed.
  */
-int ebur128_change_parameters(ebur128_state* st,
-                              unsigned int channels,
-                              unsigned long samplerate);
+int32_t ebur128_change_parameters(ebur128_state* st,
+                              uint32_t channels,
+                              uint32_t samplerate);
 
 /** \brief Set the maximum window duration.
  *
@@ -184,7 +184,7 @@ int ebur128_change_parameters(ebur128_state* st,
  *      invalid and must be destroyed.
  *    - EBUR128_ERROR_NO_CHANGE if window duration not changed.
  */
-int ebur128_set_max_window(ebur128_state* st, unsigned long window);
+int32_t ebur128_set_max_window(ebur128_state* st, uint64_t window);
 
 /** \brief Set the maximum history.
  *
@@ -203,7 +203,7 @@ int ebur128_set_max_window(ebur128_state* st, unsigned long window);
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_NO_CHANGE if history not changed.
  */
-int ebur128_set_max_history(ebur128_state* st, unsigned long history);
+int32_t ebur128_set_max_history(ebur128_state* st, uint64_t history);
 
 /** \brief Add frames to be processed.
  *
@@ -284,8 +284,8 @@ int ebur128_loudness_shortterm(ebur128_state* st, float* out);
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if window larger than current window in st.
  */
-int ebur128_loudness_window(ebur128_state* st,
-                            unsigned long window,
+int32_t ebur128_loudness_window(ebur128_state* st,
+                            uint64_t window,
                             float* out);
 
 /** \brief Get loudness range (LRA) of programme in LU.
@@ -333,8 +333,8 @@ int ebur128_loudness_range_multiple(ebur128_state** sts,
  *      been set.
  *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
  */
-int ebur128_sample_peak(ebur128_state* st,
-                        unsigned int channel_number,
+int32_t ebur128_sample_peak(ebur128_state* st,
+                        uint32_t channel_number,
                         float* out);
 
 /** \brief Get maximum sample peak from the last call to add_frames().
@@ -350,8 +350,8 @@ int ebur128_sample_peak(ebur128_state* st,
  *      been set.
  *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
  */
-int ebur128_prev_sample_peak(ebur128_state* st,
-                             unsigned int channel_number,
+int32_t ebur128_prev_sample_peak(ebur128_state* st,
+                             uint32_t channel_number,
                              float* out);
 
 /** \brief Get maximum true peak from all frames that have been processed.
@@ -375,8 +375,8 @@ int ebur128_prev_sample_peak(ebur128_state* st,
  *      been set.
  *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
  */
-int ebur128_true_peak(ebur128_state* st,
-                      unsigned int channel_number,
+int32_t ebur128_true_peak(ebur128_state* st,
+                      uint32_t channel_number,
                       float* out);
 
 /** \brief Get maximum true peak from the last call to add_frames().
@@ -400,8 +400,8 @@ int ebur128_true_peak(ebur128_state* st,
  *      been set.
  *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
  */
-int ebur128_prev_true_peak(ebur128_state* st,
-                           unsigned int channel_number,
+int32_t ebur128_prev_true_peak(ebur128_state* st,
+                           uint32_t channel_number,
                            float* out);
 
 /** \brief Get relative threshold in LUFS.
@@ -414,6 +414,8 @@ int ebur128_prev_true_peak(ebur128_state* st,
  *      been set.
  */
 int ebur128_relative_threshold(ebur128_state* st, float* out);
+
+void ebur128_reset(ebur128_state *st);
 
 #ifdef __cplusplus
 }
