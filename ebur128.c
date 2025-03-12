@@ -10,7 +10,7 @@
 #include <math.h> /* You may have to define _USE_MATH_DEFINES if you use MSVC */
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "esp_attr.h"
 /* This can be replaced by any BSD-like queue implementation. */
 #include <sys/queue.h>
 
@@ -632,7 +632,7 @@ static void ebur128_check_true_peak(ebur128_state* st, size_t frames) {
 #endif
 
 #define EBUR128_FILTER(type, min_scale, max_scale)                             \
-  static void ebur128_filter_##type(ebur128_state* st, const type* src,        \
+  IRAM_ATTR static void ebur128_filter_##type(ebur128_state* st, const type* src,        \
                                     size_t frames) {                           \
     static float scaling_factor =                                             \
         EBUR128_MAX(-((float) (min_scale)), (float) (max_scale));            \
@@ -990,7 +990,7 @@ int32_t ebur128_set_max_history(ebur128_state* st, uint64_t history) {
 
 static int ebur128_energy_shortterm(ebur128_state* st, float* out);
 #define EBUR128_ADD_FRAMES(type)                                               \
-  int ebur128_add_frames_##type(ebur128_state* st, const type* src,            \
+  IRAM_ATTR int ebur128_add_frames_##type(ebur128_state* st, const type* src,            \
                                 size_t frames) {                               \
     size_t src_index = 0;                                                      \
     uint32_t c = 0;                                                        \
@@ -1525,4 +1525,21 @@ void ebur128_reset(ebur128_state *st) {
   st->d->audio_data_index = 0;
   /* reset short term frame counter */
   st->d->short_term_frame_counter = 0;
+}
+
+
+uint16_t ebur128_to_level(float* lufs_val,float gate,uint16_t max_level,bool zero_silence){
+  float lufs_val_copy = *lufs_val;
+  if(lufs_val_copy < gate){
+    lufs_val_copy = gate;
+  }else if(lufs_val_copy > 0.0f){
+    lufs_val_copy = 0.0f;
+  }
+  const float scale_factor = fabsf(gate) / (float) max_level;
+  uint16_t ret = (uint16_t)(fabsf(lufs_val_copy) / scale_factor);
+  if(!zero_silence){
+    return ret;
+  }else{
+    return max_level - ret;
+  }
 }

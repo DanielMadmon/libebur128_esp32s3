@@ -18,6 +18,7 @@ extern "C" {
 
 #include <stddef.h> /* for size_t */
 #include <inttypes.h>
+#include <stdbool.h>
 /** \enum channel
  *  Use these values when setting the channel map with ebur128_set_channel().
  *  See definitions in ITU R-REC-BS 1770-4
@@ -416,6 +417,20 @@ int32_t ebur128_prev_true_peak(ebur128_state* st,
 int ebur128_relative_threshold(ebur128_state* st, float* out);
 
 void ebur128_reset(ebur128_state *st);
+
+
+/**
+ * @brief convert lufs result to discrete levels
+ * 
+ * @attention the function will trigger an abort if lufs values are out of range(-70..0)
+ * 
+ * @param lufs_val lufs value
+ * @param max_level how many levels to use
+ * @param zero_silence a flag to indicate that the return value should use zero level as silence refrence
+ * @param gate a negative number that will determine the min silence level(for example -70.0)
+ * @returns the level in uint16_t
+ */
+uint16_t ebur128_to_level(float* lufs_val,float gate,uint16_t max_level,bool zero_silence);
 
 #ifdef __cplusplus
 }
