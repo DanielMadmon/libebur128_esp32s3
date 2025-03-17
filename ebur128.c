@@ -6,8 +6,11 @@
 #include <limits.h>
 #include <stdint.h>
 
+#if !__BSD_VISIBLE
 #define __BSD_VISIBLE 1
+#endif
 #include <math.h> /* You may have to define _USE_MATH_DEFINES if you use MSVC */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_attr.h"
@@ -21,6 +24,30 @@
   }
 #define EBUR128_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
+__attribute__((always_inline)) inline
+float recipsf2(float input) {
+    float result, temp;
+    asm(
+        "recip0.s %0, %2\n"
+        "const.s %1, 1\n"
+        "msub.s %1, %2, %0\n"
+        "madd.s %0, %0, %1\n"
+        "const.s %1, 1\n"
+        "msub.s %1, %2, %0\n"
+        "maddn.s %0, %0, %1\n"
+        :"=&f"(result),"=&f"(temp):"f"(input)
+    );
+    return result;
+}
+
+#ifndef FAST_DIV
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32
+#define FAST_DIV(a, b) (a)*recipsf2(b)
+#else
+#define FAST_DIV(a,b)(a / b)
+#endif
+#endif
+
 static int safe_size_mul(size_t nmemb, size_t size, size_t* result) {
   /* Adapted from OpenBSD reallocarray. */
 #define MUL_NO_OVERFLOW (((size_t) 1) << (sizeof(size_t) * 4))
@@ -33,10 +60,10 @@ static int safe_size_mul(size_t nmemb, size_t size, size_t* result) {
   return 0;
 }
 
-STAILQ_HEAD(ebur128_double_queue, ebur128_dq_entry);
-struct ebur128_dq_entry {
+STAILQ_HEAD(ebur128_float_queue, ebur128_fq_entry);
+struct ebur128_fq_entry {
   float z;
-  STAILQ_ENTRY(ebur128_dq_entry) entries;
+  STAILQ_ENTRY(ebur128_fq_entry) entries;
 };
 
 #define ALMOST_ZERO 0.000001f
@@ -83,11 +110,11 @@ struct ebur128_state_internal {
   /** one filter_state per channel. */
   filter_state* v;
   /** Linked list of block energies. */
-  struct ebur128_double_queue block_list;
+  struct ebur128_float_queue block_list;
   uint64_t block_list_max;
   uint64_t block_list_size;
   /** Linked list of 3s-block energies, used to calculate LRA. */
-  struct ebur128_double_queue short_term_block_list;
+  struct ebur128_float_queue short_term_block_list;
   uint64_t st_block_list_max;
   uint64_t st_block_list_size;
   int32_t use_histogram;
@@ -566,7 +593,7 @@ ebur128_init(uint32_t channels, uint64_t samplerate, uint32_t mode){
 }
 
 void ebur128_destroy(ebur128_state** st) {
-  struct ebur128_dq_entry* entry;
+  struct ebur128_fq_entry* entry;
   free((*st)->d->short_term_block_energy_histogram);
   free((*st)->d->block_energy_histogram);
   free((*st)->d->v);
@@ -651,7 +678,7 @@ static void ebur128_check_true_peak(ebur128_state* st, size_t frames) {
             max = EBUR128_MAX(cur, -cur);                                      \
           }                                                                    \
         }                                                                      \
-        max /= scaling_factor;                                                 \
+        max = FAST_DIV(max,scaling_factor);                                    \
         if (max > st->d->prev_sample_peak[c]) {                                \
           st->d->prev_sample_peak[c] = max;                                    \
         }                                                                      \
@@ -662,7 +689,7 @@ static void ebur128_check_true_peak(ebur128_state* st, size_t frames) {
       for (i = 0; i < frames; ++i) {                                           \
         for (c = 0; c < st->channels; ++c) {                                   \
           st->d->resampler_buffer_input[i * st->channels + c] =                \
-              (float) ((float) src[i * st->channels + c] / scaling_factor);   \
+              (float) (FAST_DIV((float) src[i * st->channels + c],scaling_factor));   \
         }                                                                      \
       }                                                                        \
       ebur128_check_true_peak(st, frames);                                     \
@@ -673,7 +700,7 @@ static void ebur128_check_true_peak(ebur128_state* st, size_t frames) {
       }                                                                        \
       for (i = 0; i < frames; ++i) {                                           \
         st->d->v[c][0] =                                                       \
-            (float) ((float) src[i * st->channels + c] / scaling_factor) -   \
+            (float) (FAST_DIV((float) src[i * st->channels + c],scaling_factor)) -   \
             st->d->a[1] * st->d->v[c][1] - /**/                                \
             st->d->a[2] * st->d->v[c][2] - /**/                                \
             st->d->a[3] * st->d->v[c][3] - /**/                                \
@@ -694,8 +721,8 @@ static void ebur128_check_true_peak(ebur128_state* st, size_t frames) {
     TURN_OFF_FTZ                                                               \
   }
 
-EBUR128_FILTER(short, SHRT_MIN, SHRT_MAX)
-EBUR128_FILTER(int, INT_MIN, INT_MAX)
+EBUR128_FILTER(int16_t, SHRT_MIN, SHRT_MAX)
+EBUR128_FILTER(int32_t, INT_MIN, INT_MAX)
 EBUR128_FILTER(float, -1.0f, 1.0f)
 EBUR128_FILTER(double, -1.0, 1.0)
 
@@ -773,13 +800,13 @@ static int ebur128_calc_gating_block(ebur128_state* st,
     if (st->d->use_histogram) {
       ++st->d->block_energy_histogram[find_histogram_index(sum)];
     } else {
-      struct ebur128_dq_entry* block;
+      struct ebur128_fq_entry* block;
       if (st->d->block_list_size == st->d->block_list_max) {
         block = STAILQ_FIRST(&st->d->block_list);
         STAILQ_REMOVE_HEAD(&st->d->block_list, entries);
       } else {
         block =
-            (struct ebur128_dq_entry*) malloc(sizeof(struct ebur128_dq_entry));
+            (struct ebur128_fq_entry*) malloc(sizeof(struct ebur128_fq_entry));
         if (!block) {
           return EBUR128_ERROR_NOMEM;
         }
@@ -973,13 +1000,13 @@ int32_t ebur128_set_max_history(ebur128_state* st, uint64_t history) {
   st->d->block_list_max = st->d->history / 100;
   st->d->st_block_list_max = st->d->history / 3000;
   while (st->d->block_list_size > st->d->block_list_max) {
-    struct ebur128_dq_entry* block = STAILQ_FIRST(&st->d->block_list);
+    struct ebur128_fq_entry* block = STAILQ_FIRST(&st->d->block_list);
     STAILQ_REMOVE_HEAD(&st->d->block_list, entries);
     free(block);
     st->d->block_list_size--;
   }
   while (st->d->st_block_list_size > st->d->st_block_list_max) {
-    struct ebur128_dq_entry* block =
+    struct ebur128_fq_entry* block =
         STAILQ_FIRST(&st->d->short_term_block_list);
     STAILQ_REMOVE_HEAD(&st->d->short_term_block_list, entries);
     free(block);
@@ -1015,7 +1042,7 @@ static int ebur128_energy_shortterm(ebur128_state* st, float* out);
           st->d->short_term_frame_counter += st->d->needed_frames;             \
           if (st->d->short_term_frame_counter ==                               \
               st->d->samples_in_100ms * 30) {                                  \
-            struct ebur128_dq_entry* block;                                    \
+            struct ebur128_fq_entry* block;                                    \
             float st_energy;                                                  \
             if (ebur128_energy_shortterm(st, &st_energy) == EBUR128_SUCCESS && \
                 st_energy >= histogram_energy_boundaries[0]) {                 \
@@ -1027,8 +1054,8 @@ static int ebur128_energy_shortterm(ebur128_state* st, float* out);
                   block = STAILQ_FIRST(&st->d->short_term_block_list);         \
                   STAILQ_REMOVE_HEAD(&st->d->short_term_block_list, entries);  \
                 } else {                                                       \
-                  block = (struct ebur128_dq_entry*) malloc(                   \
-                      sizeof(struct ebur128_dq_entry));                        \
+                  block = (struct ebur128_fq_entry*) malloc(                   \
+                      sizeof(struct ebur128_fq_entry));                        \
                   if (!block) {                                                \
                     return EBUR128_ERROR_NOMEM;                                \
                   }                                                            \
@@ -1070,15 +1097,15 @@ static int ebur128_energy_shortterm(ebur128_state* st, float* out);
     return EBUR128_SUCCESS;                                                    \
   }
 
-EBUR128_ADD_FRAMES(short)
-EBUR128_ADD_FRAMES(int)
+EBUR128_ADD_FRAMES(int16_t)
+EBUR128_ADD_FRAMES(int32_t)
 EBUR128_ADD_FRAMES(float)
 EBUR128_ADD_FRAMES(double)
 
 static int ebur128_calc_relative_threshold(ebur128_state* st,
                                            size_t* above_thresh_counter,
                                            float* relative_threshold) {
-  struct ebur128_dq_entry* it;
+  struct ebur128_fq_entry* it;
   size_t i;
 
   if (st->d->use_histogram) {
@@ -1099,7 +1126,7 @@ static int ebur128_calc_relative_threshold(ebur128_state* st,
 
 static int
 ebur128_gated_loudness(ebur128_state** sts, size_t size, float* out) {
-  struct ebur128_dq_entry* it;
+  struct ebur128_fq_entry* it;
   float gated_loudness = 0.0;
   float relative_threshold = 0.0;
   size_t above_thresh_counter = 0;
@@ -1283,7 +1310,7 @@ int ebur128_loudness_range_multiple(ebur128_state** sts,
                                     size_t size,
                                     float* out) {
   size_t i, j;
-  struct ebur128_dq_entry* it;
+  struct ebur128_fq_entry* it;
   float* stl_vector;
   size_t stl_size;
   float* stl_relgated;
@@ -1506,13 +1533,13 @@ void ebur128_reset(ebur128_state *st) {
   }
 
   while (!STAILQ_EMPTY(&st->d->block_list)) {
-    struct ebur128_dq_entry* block = STAILQ_FIRST(&st->d->block_list);
+    struct ebur128_fq_entry* block = STAILQ_FIRST(&st->d->block_list);
     STAILQ_REMOVE_HEAD(&st->d->block_list, entries);
     free(block);
     st->d->block_list_size--;
   }
   while (!STAILQ_EMPTY(&st->d->short_term_block_list)) {
-    struct ebur128_dq_entry* block =
+    struct ebur128_fq_entry* block =
         STAILQ_FIRST(&st->d->short_term_block_list);
     STAILQ_REMOVE_HEAD(&st->d->short_term_block_list, entries);
     free(block);
@@ -1533,7 +1560,7 @@ uint16_t ebur128_to_level(float* lufs_val,float gate,uint16_t max_level,bool zer
   if(lufs_val_copy < gate){
     lufs_val_copy = gate;
   }else if(lufs_val_copy > 0.0f){
-    lufs_val_copy = 0.0f;
+    lufs_val_copy = -ALMOST_ZERO;
   }
   const float scale_factor = fabsf(gate) / (float) max_level;
   uint16_t ret = (uint16_t)(fabsf(lufs_val_copy) / scale_factor);

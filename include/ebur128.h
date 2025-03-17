@@ -215,11 +215,11 @@ int32_t ebur128_set_max_history(ebur128_state* st, uint64_t history);
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_NOMEM on memory allocation error.
  */
-int ebur128_add_frames_short(ebur128_state* st,
-                             const short* src,
+int ebur128_add_frames_int16_t(ebur128_state* st,
+                             const int16_t* src,
                              size_t frames);
 /** \brief See \ref ebur128_add_frames_short */
-int ebur128_add_frames_int(ebur128_state* st, const int* src, size_t frames);
+int ebur128_add_frames_int32_t(ebur128_state* st, const int32_t* src, size_t frames);
 /** \brief See \ref ebur128_add_frames_short */
 int ebur128_add_frames_float(ebur128_state* st,
                              const float* src,
