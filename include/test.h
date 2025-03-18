@@ -1,13 +1,12 @@
 #ifndef ___EBUR128_TEST__
 #define ___EBUR128_TEST__
-#include "sdkconfig.h"
-#if CONFIG_ENABLE_TESTS
-#include "wav.h"
 #include <stdio.h>
+#include "dr_wav.h"
+/***/
+float test_global_loudness(const char* filename);
+float test_loudness_range(const char* filename);
+float test_true_peak(const char* filename);
+float test_max_momentary(const char* filename);
+float test_max_shortterm(const char* filename);
 
-float test_global_loudness(const char* file_name,ebur128_state** out_state);
-
-
-
-#endif
 #endif
