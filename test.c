@@ -268,3 +268,37 @@ float test_true_peak(const char* filename){
     exit:
         return out;
 }
+
+float test_file(const char* filename, float expected_result,ebur128_mode mode){
+    float result = -HUGE_VAL;
+    switch(mode){
+        case EBUR128_MODE_M:
+            result = test_max_momentary(filename);
+            break;
+        case EBUR128_MODE_S:
+            result = test_max_shortterm(filename);
+            break;
+        case EBUR128_MODE_I:
+            result = test_global_loudness(filename);
+            break;
+        case EBUR128_MODE_LRA:
+            result = test_loudness_range(filename);
+            break;
+        case EBUR128_MODE_SAMPLE_PEAK:
+            result = test_true_peak(filename);
+            break;
+        case EBUR128_MODE_TRUE_PEAK:
+            result = test_true_peak(filename);
+            break;
+        default:
+            return result;
+    }
+    if(result == -HUGE_VAL){
+        return result;
+    }else if(fabsf(expected_result) > fabsf(result)){
+        result = fabsf(expected_result) - fabsf(result);
+    }else{
+        result = fabsf(result) - fabsf(expected_result);
+    }
+    return result;
+}
