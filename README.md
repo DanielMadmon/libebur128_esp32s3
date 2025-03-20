@@ -13,7 +13,9 @@ Features
 * True peak scanning.
 * Supports all samplerates by recalculation of the filter coefficients.
 * support for conversion of LUFS to discrete levels.
-requirements
+
+
+Requirements
 --------
 * enable external psram support. 
 * may need to disable watchdog timers based on usage.
