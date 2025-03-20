@@ -1,4 +1,4 @@
 version: "0.0.1"
-description: "ebur128 lib port for esp32s3"
+description: "ebur128 lib port for esp32(s3)"
 url: "https://github.com/DanielMadmon/libebur128_esp32s3"
 license: "MIT"

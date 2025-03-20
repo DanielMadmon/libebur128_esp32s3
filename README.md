@@ -22,7 +22,10 @@ Requirements
 
 Installation
 ------------
-* clone the repository into components directory in esp-idf project.
+```bash
+idf.py add-dependency "danielmadmon/libebur128_esp32s3^0.0.1"
+```
+* or clone the repository into components directory in esp-idf project.
 
 Basic Usage
 -----
